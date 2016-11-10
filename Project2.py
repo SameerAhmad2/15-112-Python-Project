@@ -24,13 +24,13 @@ def SummonZombie(mX,mY):
     global AllZombies
     global angle
     Zombie = BrainZombie(mX,mY,angle)
+    AllZombies.append(Zombie)
 
 #Class for the Brain Zombie Sprite
 
 class BrainZombie(pygame.sprite.Sprite):
     global Screen
-    global FrameCount
-    def __init__(self,frame,x,y,angle):
+    def __init__(self,x,y,angle):
         pygame.sprite.Sprite.__init__(self)
         self.frame = 1
         self.x_pos = x
@@ -41,8 +41,8 @@ class BrainZombie(pygame.sprite.Sprite):
             self.allFrames.append(loadBZombieImg(self.frame+i))
         self.me = None
         
-    def Move(self):
-        (mX,mY) = pygame.mouse.get_pos()
+    def move(self,mX,mY):
+        global FrameCount
         x_Dist = mX - self.x_pos
         y_Dist = mY - self.y_pos
         x_change = x_Dist/float(300000)
@@ -53,8 +53,7 @@ class BrainZombie(pygame.sprite.Sprite):
             self.frame = self.frame&8 + 1
         FrameCount += 1
         
-    def Rotate(self):
-        (mX,mY) = pygame.mouse.get_pos()
+    def rotate(self,mX,mY):
         Vect1 = (1,0)
         Vect2 = (mX-(self.x_pos),mY-(self.y_pos))
         Angle = math.acos((Vect1[0]*Vect2[0] + Vect1[1]*Vect2[1])/(math.sqrt((mX-(self.x_pos))**2 + (mY-(self.y_pos))**2)))
@@ -64,10 +63,10 @@ class BrainZombie(pygame.sprite.Sprite):
         else:
             angle = DegAngle - 90
         self.angle = angle
-        RotImage = pygame.transform.rotate(self.image,angle)
-        self.image = RotImage
+        for i in range(8):
+            self.allFrames[i] = pygame.transform.rotate(self.allFrames[i],angle)
         
-    def Update(self):
+    def update(self):
         if self.me != None:
             Screen.fill(white)
         self.me = Screen.blit(self.allFrames[self.frame],(self.x_pos,self.y_pos))
@@ -86,43 +85,32 @@ class Player(pygame.sprite.Sprite):
 ##
 ##    def Rotate(self):
 
-
-
-
 pygame.init()
-width = 600
-height = 500
+width,height = 600,500
 Screen = pygame.display.set_mode((width,height))
 white = 255,255,255
 FrameCount = 0
 gameExit = False
 ##count = 1
 angle = -90
-
+AllZombies = []
 x,y = (width/2)-32,(height/2)-32
 x_change = 0
 y_change = 0
 mX , mY = 0 , 0
-RandomNo1 = random.randint(20,25)
+RandomNo1 = random.randint(4,15)
 RandomNo2 = RandomNo1 - random.randint(3,22)
 ListofBoundaryCoords = []
-Brain1 = BrainZombie(frame,x,y,angle)
+##Brain1 = BrainZombie(frame,x,y,angle)
+for i in range(RandomNo1):
+    SummonZombie(width-32,height-32)
 while not gameExit:
-##    if count%75 == 0:
-##        frame = frame%8 + 1
-##        Brain1 = BrainZombie(frame,x,y,angle)
-##    count += 1
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            gameExit = True
-        if pygame.mouse.get_pressed()[0] == True:
-            (mX,mY) = pygame.mouse.get_pressed()
-            SummonZombie()
-    pygame.display.update()
-pygame.quit()
-quit()
-
-
+    Screen.fill(white)
+    for Zomb in AllZombies:
+        (mX,mY) = pygame.mouse.get_pos()
+        Zomb.move(mX,mY)                
+        Zomb.rotate(mX,mY)
+        Zomb.update()
 
 
 
