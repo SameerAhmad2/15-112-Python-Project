@@ -67,8 +67,8 @@ class BrainZombie():
         global FrameCount
         x_Dist = mX - self.x_pos
         y_Dist = mY - self.y_pos
-        x_change = x_Dist/float(300000)
-        y_change = y_Dist/float(300000)
+        x_change = x_Dist/float(100)
+        y_change = y_Dist/float(100)
         self.x_pos += x_change
         self.y_pos += y_change
         if FrameCount%5 == 0:
@@ -101,7 +101,7 @@ class Player(pygame.sprite.Sprite):
 ##    def Rotate(self):
 
 pygame.init()
-width,height = 600,500
+width,height = 900,500
 Screen = pygame.display.set_mode((width,height))
 white = 255,255,255
 FrameCount = 0
@@ -114,17 +114,28 @@ x_change = 0
 y_change = 0
 mX , mY = 0 , 0
 RandomNo1 = random.randint(4,15)
-RandomNo2 = RandomNo1 - random.randint(3,22)
 ListofBoundaryCoords = []
+for i in range(width):
+    ListofBoundaryCoords += [(i,0)]
+for i in range(width):
+    ListofBoundaryCoords += [(i,height)]
+for i in range(height):
+    ListofBoundaryCoords += [(0,i)]
+for i in range(height):
+    ListofBoundaryCoords += [(width,i)]
 clock = pygame.time.Clock()
 ##Brain1 = BrainZombie(frame,x,y,angle)
-for i in range(1):
-    SummonZombie(width-32,height-32)
+for i in range(50):
+    RandomNo2 = random.randint(1,2*(width+height))
+    (x,y) = ListofBoundaryCoords[RandomNo2 - 1]
+    SummonZombie(x,y)
 while not gameExit:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            gameExit = True
     Screen.fill(white)
     for Zomb in AllZombies:
         (mX,mY) = pygame.mouse.get_pos()
-        print (mX,mY)
         Zomb.move(mX,mY)                
 ##        Zomb.rotate(mX,mY)
         Zomb.update()
