@@ -1,7 +1,7 @@
 import pygame
 import math
 import random
-
+import cv2
 
 pygame.init()
 width = 600
@@ -23,7 +23,6 @@ def MoveZombie(mX,mY,x,y):
     return (x_change,y_change) 
 
     
-
 def AngleCalc(mX,mY,x,y):
     Vect1Cor = (1,0)
     Vect2Cor = (mX-(x),mY-(y))
@@ -45,7 +44,7 @@ def Rotate(Img,Angle,x,y):
     global Screen
     ImgRect = Img.get_rect()
     NewImg = pygame.transform.rotate(Img,Angle)
-    ImgRect = NewImg.get_rect().center
+    ImgRect = NewImg.get_rect().center()
     Screen.blit(NewImg,(x,y))
 
 def BrainZombie(x,y,frame,angle):
@@ -57,6 +56,7 @@ def CapZombie(x,y,frame,angle):
     Rotate(Zombie,angle,x,y)
 
 x,y = (width/2)-32,(height/2)-32
+x2,y2 = 76,324
 x_change = 0
 y_change = 0
 mX , mY = 0 , 0
@@ -97,12 +97,16 @@ while not gameExit:
     Screen.fill(white)
     (mX,mY) = pygame.mouse.get_pos()
     angle = AngleCalc(mX,mY,x,y)
-    M_change = MoveZombie(mX,mY,x,y)
-    x += M_change[0]
-    y += M_change[1]
+    angle2 = AngleCalc(mX,mY,x2,y2)
+    M_change1 = MoveZombie(mX,mY,x,y)
+    M_change2 = MoveZombie(mX,mY,x2,y2)
+    x += M_change1[0]
+    y += M_change1[1]
+    x2 += M_change2[0]
+    y2 += M_change2[1]
     Screen.fill(white)
     BrainZombie(x-32,y-32,frame,angle)
-    CapZombie(x+50,y+50,frame,angle)
+    CapZombie(x2,y2,frame,angle)
 ##    for i in range(0,len(ListofZombieCoords)):
 ##        x,y = ListofZombieCoords[i][0],ListofZombieCoords[i][1]
 ##        angle = AngleCalc(mX,mY,x,y)
