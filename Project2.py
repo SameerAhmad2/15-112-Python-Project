@@ -29,6 +29,11 @@ from PIL import Image
 import ImageWriter
 
 #**|** The relevant code was borrowed from http://stackoverflow.com/questions/9041681/opencv-python-rotate-image-by-x-degrees-around-specific-point
+#Function to return the Modulus of X
+def Modulus(x):
+    if x<0:
+        x = -x
+    return x
 
 #Function to laod relevant HealthBar depending on Percentage of Health
 def HealthBar(Percentage):
@@ -226,10 +231,11 @@ class Player():
         Vect2 = (mX-self.x_pos,mY-self.y_pos)
         Angle = math.acos((Vect1[0]*Vect2[0] + Vect1[1]*Vect2[1])/(math.sqrt((mX-self.x_pos)**2 + (mY-self.y_pos)**2)))
         DegAngle = math.degrees(Angle)
-        if mY>self.y_pos:
-            angle = - DegAngle - 90
+        if mY<self.y_pos:
+            angle = DegAngle
         else:
-            angle = DegAngle - 90
+            angle = -DegAngle
+        
         Ratio =ModDist*math.sin(angle)/ModDist*math.cos(angle)
         if self.x_pos<0:
             self.x_pos = 0
@@ -255,7 +261,53 @@ class Player():
             self.me = "Alive"
         Screen.blit(self.allFrames[self.frame-1],(self.x_pos,self.y_pos))
 
+    def getPlayerPos(self):
+        return self.x_pos,self.y_pos
 
+#Class to fire a Bullet
+class Bullet():
+    def __init__(self,speed,x,y):
+        self.img = pygame.image.load("Small Bullet.png")
+        self.speed = speed
+        self.x_pos = x
+        self.y_pos = y
+        self.x_change = 0
+        self.y_change = 0
+
+    def Change(self,x1,y1):
+        (mX,mY) = pygame.mouse.get_pos()
+        ModDist = math.sqrt((x1-mX)**2 + (y1-mY)**2)
+        Vect1 = (1,0)
+        Vect2 = (mX-x1,mY-y1)
+        Angle = math.acos((Vect1[0]*Vect2[0] + Vect1[1]*Vect2[1])/(math.sqrt((mX-x1)**2 + (mY-y1)**2)))
+        DegAngle = math.degrees(Angle)
+        if mY<self.y_pos:
+            angle = DegAngle
+        else:
+            angle = -DegAngle
+        Ratio = (mY-y1)/float(mX-x1)
+        if mX>x1:
+            self.x_change = self.speed*1
+        else:
+            self.x_change = self.speed*(-1)
+        if Modulus(angle)>75 and Modulus(angle)<105:
+            if Ratio>self.speed:
+                Ratio = self.speed
+            if Ratio<-self.speed:
+                Ratio = -self.speed
+            if Ratio>0 and Ratio<self.speed/2:
+                Ratio = self.speed/2
+            if Ratio<=0 and Ratio>-self.speed/2:
+                Ratio = -self.speed/2
+        self.y_change = self.x_change*Ratio
+        
+    def Move(self):
+        self.x_pos += self.x_change
+        self.y_pos += self.y_change
+    def update(self):
+        global Screen
+        Screen.blit(self.img,(self.x_pos,self.y_pos))
+        
 #Initialize pygame and set up display
 pygame.init()
 width,height = 900,500
@@ -266,6 +318,7 @@ Screen = pygame.display.set_mode((width,height))
 white = 255,255,255
 angle = -90
 AllZombies = []
+AllBullets = []
 FrameCount1 = 0
 FrameCount2 = 0
 FrameCount3 = 0
@@ -305,23 +358,21 @@ while not gameExit:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             gameExit = True
-##        if event.type == pygame.MOUSEMOTION:
-##            KeysPressed = pygame.key.get_pressed()
-##            if KeysPressed[pygame.K_w]:
-##                Player.Move("W")
-##            if KeysPressed[pygame.K_s]:
-##                Player.Move("S")
-##            if KeysPressed[pygame.K_a]:
-##                Player.Move("A")
-##            if KeysPressed[pygame.K_d]:
-##                Player.Move("D")
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            P1x,P1y = Player1.getPlayerPos()
+            ZombieKiller = Bullet(5,P1x,P1y)
+            ZombieKiller.Change(P1x,P1y)
+            AllBullets.append(ZombieKiller)
+            
+            
     Screen.fill(white)
     for Zomb in AllZombies:
-        (mX,mY) = pygame.mouse.get_pos()
-        Zomb.move(mX,mY)                
-##        Zomb.rotate(mX,mY)
+        P1x,P1y = Player1.getPlayerPos()
+        Zomb.move(P1x,P1y)                
         Zomb.update()
-    if NewZombieCount%3600 == 0 and NewZombieCount != 0:
+
+    #Random New Zombie Spawner
+    if NewZombieCount%12500 == 0 and NewZombieCount != 0:
         RandomNo2 = random.randint(1,(width+height))
         (x,y) = ListofBoundaryCoords[RandomNo2 - 1]
         Decider = random.choice([1,2,3,4,5,6,7,8,9,10])
@@ -330,10 +381,12 @@ while not gameExit:
         else: 
             SummonZombie("Brain",x,y)
     NewZombieCount += 1
+
+
+    #Handling Pressed Keys    
     KeysPressed = pygame.key.get_pressed()
     if KeysPressed[pygame.K_TAB]:
         AimAssistCount += 1
-        print AimAssistCount
     if AimAssistCount%2 == 1:
         Aim = AimAssistON()
         (mX,mY) = pygame.mouse.get_pos()
@@ -347,9 +400,18 @@ while not gameExit:
         Player1.Move("A")
     if KeysPressed[pygame.K_d]:
         Player1.Move("D")
+    
+    for Bullets in AllBullets:
+        Bullets.Move()
+        Bullets.update()
+        
+    #Player1 Update Haandler    
     Player1.ChangeFrame()
     Player1.update()
+    
+    #Health Bar Handler
     Screen.blit(HealthBar(Percentage),(width-210,height-140))
+
     pygame.display.update()
     clock.tick(75)
 pygame.quit()

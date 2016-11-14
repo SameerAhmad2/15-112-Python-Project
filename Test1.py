@@ -1,7 +1,6 @@
 import pygame
 import math
 import random
-import cv2
 
 pygame.init()
 width = 600
@@ -44,7 +43,7 @@ def Rotate(Img,Angle,x,y):
     global Screen
     ImgRect = Img.get_rect()
     NewImg = pygame.transform.rotate(Img,Angle)
-    ImgRect = NewImg.get_rect().center()
+    ImgRect = NewImg.get_rect().center
     Screen.blit(NewImg,(x,y))
 
 def BrainZombie(x,y,frame,angle):
