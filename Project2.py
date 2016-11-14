@@ -68,6 +68,7 @@ def SummonZombie(Type,x,y):
         Zombie = BrainZombie(x,y,angle)
     else:
         Zombie = CapZombie(x,y,angle)
+        
     #Stores this instance in a list of active zombies.
     AllZombies.append(Zombie)
 
@@ -355,6 +356,8 @@ clock = pygame.time.Clock()
 
 #Main game while loop.
 while not gameExit:
+
+    #Event LOOP
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             gameExit = True
@@ -363,16 +366,18 @@ while not gameExit:
             ZombieKiller = Bullet(5,P1x,P1y)
             ZombieKiller.Change(P1x,P1y)
             AllBullets.append(ZombieKiller)
+
             
-            
+    #Zombie LOOP
     Screen.fill(white)
     for Zomb in AllZombies:
         P1x,P1y = Player1.getPlayerPos()
         Zomb.move(P1x,P1y)                
         Zomb.update()
 
-    #Random New Zombie Spawner
-    if NewZombieCount%12500 == 0 and NewZombieCount != 0:
+
+    #Random New Zombie Spawner Condition
+    if NewZombieCount%1250 == 0 and NewZombieCount != 0:
         RandomNo2 = random.randint(1,(width+height))
         (x,y) = ListofBoundaryCoords[RandomNo2 - 1]
         Decider = random.choice([1,2,3,4,5,6,7,8,9,10])
@@ -413,7 +418,7 @@ while not gameExit:
     Screen.blit(HealthBar(Percentage),(width-210,height-140))
 
     pygame.display.update()
-    clock.tick(75)
+    clock.tick(60)
 pygame.quit()
 quit()
 
