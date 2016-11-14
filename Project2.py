@@ -231,19 +231,24 @@ class Player():
         else:
             angle = DegAngle - 90
         Ratio =ModDist*math.sin(angle)/ModDist*math.cos(angle)
-        if Letter == "W":
-            self.y_pos -= Ratio
-            self.x_pos += 1
-        if Letter == "S":
-            self.y_pos += Ratio
-            self.x_pos -= 1
-        if Letter == "A":
-            self.y_pos -= Ratio
-            self.x_pos -= 1
-        if Letter == "D":
-            self.y_pos += Ratio
-            self.x_pos += 1
-    
+        if self.x_pos<0:
+            self.x_pos = 0
+        if self.x_pos > width-64:
+            self.x_pos = width-64
+        if self.y_pos<0:
+            self.y_pos = 0
+        if self.y_pos>height-64:
+            self.y_pos = height-64
+        else:
+            if Letter == "W":
+                self.y_pos -= 2
+            if Letter == "S":
+                self.y_pos += 2
+            if Letter == "A":
+                self.x_pos -= 2
+            if Letter == "D":
+                self.x_pos += 2
+            
     def update(self):
         global Screen
         if self.me != None:
@@ -325,7 +330,6 @@ while not gameExit:
         else: 
             SummonZombie("Brain",x,y)
     NewZombieCount += 1
-    Screen.blit(HealthBar(Percentage),(width-210,height-140))
     KeysPressed = pygame.key.get_pressed()
     if KeysPressed[pygame.K_TAB]:
         AimAssistCount += 1
@@ -345,6 +349,7 @@ while not gameExit:
         Player1.Move("D")
     Player1.ChangeFrame()
     Player1.update()
+    Screen.blit(HealthBar(Percentage),(width-210,height-140))
     pygame.display.update()
     clock.tick(75)
 pygame.quit()
