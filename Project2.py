@@ -23,8 +23,8 @@
 #    20/11 2:52pm      20/11 3:44pm
 #    20/11 6:18pm      20/11 9:35pm
 #    21/11 6:21am      21/11 9:45am
-#    21/11 11:21am
-
+#    21/11 11:21am     21/11 12:17pm
+#    21/11 6:30pm      21/11 11:13pm
  
 import pygame
 import math
@@ -83,11 +83,11 @@ def RandomBorderPos():
         ListofBoundaryCoords += [(width,i)]
 
 #Function to initialize an instance of a type of zombie
-def SummonZombie(Type,x,y):
+def SummonZombie(Type,x,y,speed):
     global AllZombies
     global angle
     if Type == "Brain":
-        Zombie = BrainZombie(x,y,angle)
+        Zombie = BrainZombie(x,y,speed)
     elif Type == "Cap":
         Zombie = CapZombie(x,y,angle)
         
@@ -121,7 +121,7 @@ def AimAssistON():
 #Class for the Brain Zombie Sprite
 class BrainZombie(pygame.sprite.Sprite):
     global Screen
-    def __init__(self,x,y,angle):
+    def __init__(self,x,y,speed):
         pygame.sprite.Sprite.__init__(self)
         self.frame = 1
         self.allFrames = []
@@ -131,105 +131,130 @@ class BrainZombie(pygame.sprite.Sprite):
         self.rect = self.allFrames[0].get_rect()
         self.rect.x = x
         self.rect.y = y
-        self.angle = angle
-        self.me = None
+        self.angle = 0
+        self.speed = speed
         
-    def move(self,mX,mY):
-        global FrameCount1
-        x_Dist = mX - self.rect.x
-        y_Dist = mY - self.rect.y
-        x_change = x_Dist/float(300)
-        y_change = y_Dist/float(300)
-        self.rect.x += x_change
-        self.rect.y += y_change
-        if FrameCount1%5 == 0:
+    def move(self,Px,Py):
+        global FrameCount2
+        dx = self.rect.x - Px
+        dy = self.rect.y - Py
+        if self.rect.x>=Px and self.rect.y<Py:
+            if self.rect.x == Px:
+                self.angle = 0
+            else:
+                self.angle = math.atan2(float(dy),dx) + math.pi/2
+        elif self.rect.x<Px and self.rect.y<=Py:
+            if self.rect.y == Py:
+                self.angle = -math.pi/2
+            else:
+                self.angle = math.atan2(float(dy),dx) + math.pi/2
+        elif self.rect.x<=Px and self.rect.y>Py:
+            if self.rect.x == Px:
+                self.angle = math.pi
+            else:
+                self.angle = -(-math.atan2(float(dy),dx) + 3*(math.pi)/2)
+        elif self.rect.x>Px and self.rect.y>=Py:
+            if self.rect.y == Py:
+                self.angle = math.pi/2
+            else:
+                self.angle = -(math.atan2(float(dx),dy)) + math.pi 
+        self.rect.x -= math.sin(self.angle)*self.speed
+        self.rect.y += math.cos(self.angle)*self.speed
+
+        if FrameCount2%9 == 0:
             self.frame = self.frame%8 + 1
-        FrameCount1 += 1
-        
-##    def rotate(self,mX,mY):
-##        Img = self.allFrames[self.frame - 1]
-##        NewImg = Rotate(Img,self.x_pos,self.y_pos)
-##        self.allFrames[self.frame - 1] = NewImg
-        
+        FrameCount2 += 1
     def update(self):
         global Screen
         Screen.blit(self.allFrames[self.frame-1],self.rect)
 
-            
 #Class for the Cap Zombie Sprite
-class CapZombie():
+class CapZombie(pygame.sprite.Sprite):
     global Screen
-    def __init__(self,x,y,angle):
-        self.frame = 1
-        self.x_pos = x
-        self.y_pos = y
-        self.angle = angle
-        self.allFrames = []
-        for i in range(8):
-            ZombieFrame = pygame.image.load("CapZombie"+str(self.frame+i)+".png")
-            self.allFrames.append(ZombieFrame)
-        self.me = None
-        
-    def move(self,mX,mY):
-        global FrameCount2
-        x_Dist = mX - self.x_pos
-        y_Dist = mY - self.y_pos
-        x_change = x_Dist/float(50)
-        y_change = y_Dist/float(50)
-        self.x_pos += x_change
-        self.y_pos += y_change
-        if FrameCount2%5 == 0:
-            self.frame = self.frame%8 + 1
-        FrameCount2 += 1
-        
-    def rotate(self,mX,mY):
-        Img = self.allFrames[self.frame - 1]
-        NewImg = Rotate(Img,self.x_pos,self.y_pos)
-        self.allFrames[self.frame - 1] = NewImg
-        
-    def update(self):
-        global Screen
-        if self.me != None:
-            self.me = "Alive"
-        Screen.blit(self.allFrames[self.frame-1],(self.x_pos,self.y_pos))
-
-#Class for the Blinking Zombie Sprite
-class BlinkingZombie(pygame.sprite.Sprite):
-    global Screen
-    def __init__(self,x,y,angle):
+    def __init__(self,x,y,speed=1):
         pygame.sprite.Sprite.__init__(self)
         self.frame = 1
-        self.x_pos = x
-        self.y_pos = y
-        self.angle = angle
         self.allFrames = []
         for i in range(8):
-            ZombieFrame = pygame.image.load("BlinkingZombie"+str(self.frame+i)+".png")
+            ZombieFrame = pygame.image.load("BrainZombie"+str(self.frame+i)+".png")
             self.allFrames.append(ZombieFrame)
-        self.me = None
+        self.rect = self.allFrames[0].get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.angle = 0
+        self.speed = speed
         
-    def move(self,mX,mY):
+    def move(self,Px,Py):
         global FrameCount3
-        x_Dist = mX - self.x_pos
-        y_Dist = mY - self.y_pos
-        x_change = x_Dist/float(300)
-        y_change = y_Dist/float(300)
-        self.x_pos += x_change
-        self.y_pos += y_change
+        dx = Px - self.rect.x
+        dy = Py - self.rect.y
+        if self.rect.x>=Px and self.rect.y<Py:
+            if self.rect.x == Px:
+                self.angle = 0
+            else:
+                self.angle = math.atan2(float(dy),dx) + math.pi/2
+        elif self.rect.x<Px and self.rect.y<=Py:
+            if self.rect.y == Py:
+                self.angle = -90
+            else:
+                self.angle = math.atan2(float(dy),dx) - math.pi/2
+        elif self.rect.x<=Px and self.rect.y>Py:
+            if self.rect.x == Px:
+                self.angle = 180
+            else:
+                self.angle = math.atan2(float(dy),dx) - math.pi/2
+        elif self.rect.x>Px and self.rect.y>=Py:
+            if self.rect.y == Py:
+                self.angle = 90
+            else:
+                self.angle = math.atan2(float(dx),dy) + math.pi/2
+
+        self.rect.x -= math.sin(self.angle)*self.speed
+        self.rect.y += math.cos(self.angle)*self.speed
         if FrameCount3%5 == 0:
             self.frame = self.frame%8 + 1
-        FrameCount3 += 1
-        
-    def rotate(self,mX,mY):
-        Img = self.allFrames[self.frame - 1]
-        NewImg = Rotate(Img,self.x_pos,self.y_pos)
-        self.allFrames[self.frame - 1] = NewImg
         
     def update(self):
         global Screen
-        if self.me != None:
-            self.me = "Alive"
-        Screen.blit(self.allFrames[self.frame-1],(self.x_pos,self.y_pos))
+        Screen.blit(self.allFrames[self.frame-1],(self.rect.x,self.rect.y))
+
+#Class for the Blinking Zombie Sprite
+##class BlinkingZombie(pygame.sprite.Sprite):
+##    global Screen
+##    def __init__(self,x,y,angle):
+##        pygame.sprite.Sprite.__init__(self)
+##        self.frame = 1
+##        self.x_pos = x
+##        self.y_pos = y
+##        self.angle = angle
+##        self.allFrames = []
+##        for i in range(8):
+##            ZombieFrame = pygame.image.load("BlinkingZombie"+str(self.frame+i)+".png")
+##            self.allFrames.append(ZombieFrame)
+##        self.me = None
+##        
+##    def move(self,mX,mY):
+##        global FrameCount3
+##        x_Dist = mX - self.x_pos
+##        y_Dist = mY - self.y_pos
+##        x_change = x_Dist/float(300)
+##        y_change = y_Dist/float(300)
+##        self.x_pos += x_change
+##        self.y_pos += y_change
+##        if FrameCount3%5 == 0:
+##            self.frame = self.frame%8 + 1
+##        FrameCount3 += 1
+##        
+##    def rotate(self,mX,mY):
+##        Img = self.allFrames[self.frame - 1]
+##        NewImg = Rotate(Img,self.x_pos,self.y_pos)
+##        self.allFrames[self.frame - 1] = NewImg
+##        
+##    def update(self):
+##        global Screen
+##        if self.me != None:
+##            self.me = "Alive"
+##        Screen.blit(self.allFrames[self.frame-1],(self.x_pos,self.y_pos))
 
 #Class for the Player Sprite (That means YOU)       
 class Player(pygame.sprite.Sprite):
@@ -241,8 +266,8 @@ class Player(pygame.sprite.Sprite):
             PlayerFrame = pygame.image.load("Player"+str(self.frame+i)+".png")
             self.allFrames.append(PlayerFrame)
         self.rect = self.allFrames[0].get_rect()
-        self.rect.x = x
-        self.rect.y = y
+        self.x = x
+        self.y = y
         self.me = None        
         
     def ChangeFrame(self):
@@ -253,10 +278,10 @@ class Player(pygame.sprite.Sprite):
 
     def Move(self,Letter):
         (mX,mY) = pygame.mouse.get_pos()
-        ModDist = math.sqrt((self.rect.x-mX)**2 + (self.rect.x-mY)**2)
+        ModDist = math.sqrt((self.x-mX)**2 + (self.x-mY)**2)
         Vect1 = (1,0)
-        Vect2 = (mX-self.rect.x,mY-self.rect.y)
-        Angle = math.acos((Vect1[0]*Vect2[0] + Vect1[1]*Vect2[1])/(math.sqrt((mX-self.rect.x)**2 + (mY-self.rect.y)**2)))
+        Vect2 = (mX-self.x,mY-self.y)
+        Angle = math.acos((Vect1[0]*Vect2[0] + Vect1[1]*Vect2[1])/(math.sqrt((mX-self.x)**2 + (mY-self.y)**2)))
         DegAngle = math.degrees(Angle)
         if mY<self.rect.y:
             angle = DegAngle
@@ -264,36 +289,37 @@ class Player(pygame.sprite.Sprite):
             angle = -DegAngle
         
         Ratio =ModDist*math.sin(angle)/ModDist*math.cos(angle)
-        if self.rect.x<0:
-            self.rect.x = 0
-        if self.rect.x > width-64:
-            self.rect.x = width-64
-        if self.rect.y<0:
-            self.rect.y = 0
-        if self.rect.y>height-64:
-            self.rect.y = height-64
+        if self.x<0:
+            self.x = 0
+        if self.x > width-64:
+            self.x = width-64
+        if self.y<0:
+            self.y = 0
+        if self.y>height-64:
+            self.y = height-64
         else:
             if Letter == "W":
-                self.rect.y -= 2
+                self.y -= 2
             if Letter == "S":
-                self.rect.y += 2
+                self.y += 2
             if Letter == "A":
-                self.rect.x -= 2
+                self.x -= 2
             if Letter == "D":
-                self.rect.x += 2
+                self.x += 2
             
     def update(self):
         global Screen
         if self.me != None:
             self.me = "Alive"
-        Screen.blit(self.allFrames[self.frame-1],self.rect)
+        Screen.blit(self.allFrames[self.frame-1],(self.x,self.y))
 
     def getPlayerPos(self):
-        return self.rect.x,self.rect.y
+        return self.x,self.y
 
 #Class to fire a Bullet
-class Bullet():
-    def __init__(self,speed,x,y):
+class Bullet(pygame.sprite.Sprite):
+    def __init__(self,x,y,speed=1):
+        pygame.sprite.Sprite.__init__(self)
         self.img = pygame.image.load("Small Bullet.png")
         self.speed = speed
         self.x_pos = x
@@ -362,6 +388,7 @@ width,height = 900,500
 Screen = pygame.display.set_mode((width,height))
 
 #Initializing all the necessary variables
+
 white = 255,255,255
 AllZombies = []
 AllBullets = []
@@ -379,8 +406,11 @@ Percentage = 100
 Player1 = Player(width/2-32,height/2-32)
 AimAssistCount = 0
 angle = -90
+speed = 1.25
 clock = pygame.time.Clock()
 
+#Initialize all the necessary images
+Ammo = pygame.image.load("AmmoCheck.png")
 
 #Creating Boundary Coordinates and Storing them in a list.
 ListofBoundaryCoords = []
@@ -394,10 +424,10 @@ for i in range(height/2,height):
     ListofBoundaryCoords += [(width,i)]
 
     
-for i in range(RandomNo1):
+for i in range(1):
     RandomNo2 = random.randint(1,(width+height))
     (x,y) = ListofBoundaryCoords[RandomNo2 - 1]
-    SummonZombie("Brain",x,y)
+    SummonZombie("Brain",x,y,speed)
 
 
 #Main game while loop.
@@ -423,16 +453,16 @@ while not gameExit:
         Zomb.move(P1x,P1y)                
         Zomb.update()
 
-    #Random New Zombie Spawner Condition
-    if NewZombieCount%1250 == 0 and NewZombieCount != 0:
-        RandomNo2 = random.randint(1,(width+height))
-        (x,y) = ListofBoundaryCoords[RandomNo2 - 1]
-        Decider = random.choice([1,2,3,4,5,6,7,8,9,10])
-        if Decider < 4:
-            SummonZombie("Cap",x,y)
-        else: 
-            SummonZombie("Brain",x,y)
-    NewZombieCount += 1
+##    #Random New Zombie Spawner Condition
+##    if NewZombieCount%1250 == 0 and NewZombieCount != 0:
+##        RandomNo2 = random.randint(1,(width+height))
+##        (x,y) = ListofBoundaryCoords[RandomNo2 - 1]
+##        Decider = random.choice([1,2,3,4,5,6,7,8,9,10])
+##        if Decider < 4:
+##            SummonZombie("Cap",x,y,speed)
+##        else: 
+##            SummonZombie("Brain",x,y,speed)
+##    NewZombieCount += 1
 
 
     #Handling Pressed Keys    
@@ -442,7 +472,7 @@ while not gameExit:
     if AimAssistCount%2 == 1:
         Aim = AimAssistON()
         (mX,mY) = pygame.mouse.get_pos()
-        Screen.blit(Aim,(mX-7,mY-7))
+        Screen.blit(Aim,(mX-10,mY-10))
     KeysPressed = pygame.key.get_pressed()
     if KeysPressed[pygame.K_w]:
         Player1.Move("W")
@@ -464,28 +494,33 @@ while not gameExit:
     #Health Bar Handler
     Screen.blit(HealthBar(Percentage),(width-210,height-140))
 
+    #Ammo Check Handler
+    Screen.blit(Ammo,(width-100,height-66))
+
     pygame.display.update()
     clock.tick(60)
 pygame.quit()
 quit()
 
-##Newwnd = Tkinter.Tk()
-##Newwnd.title("Realm Updater")
-##Newwnd.geometry("1000x700")
-##background = Image.open("ZombieBackground.jpg")
-##background_image = ImageTk.PhotoImage(background)
-##Background_label = Tkinter.Label(Newwnd,image=background_image)
-##Background_label.place(x=0,y=0,relwidth=1,relheight=1)
-##Canvas = Tkinter.Canvas(Newwnd,width=20,height=7)
-##Canvas.grid(row=5,column=1)    
-##PlayImg = Image.open("PassivePlay.png")
-##ActivePlayImg = Image.open("ActivePlay.png")
-##Play = ImageTk.PhotoImage(PlayImg)
-##ActivePlay = ImageTk.PhotoImage(ActivePlayImg)
-##PlayButton = Tkinter.Label(Newwnd,image=Play)
-##PlayButton.grid(padx=500,pady=300)
-##Newwnd.mainloop()
-##
+
+Newwnd = Tkinter.Tk()
+Newwnd.title("Realm Updater")
+Newwnd.geometry("1000x700")
+background = Image.open("ZombieBackground.jpg")
+background_image = ImageTk.PhotoImage(background)
+Background_label = Tkinter.Label(Newwnd,image=background_image)
+Background_label.place(x=0,y=0,relwidth=1,relheight=1)
+Canvas = Tkinter.Canvas(Newwnd,width=20,height=7)
+Canvas.grid(row=5,column=1)    
+PlayImg = Image.open("GameButton.png")
+Play = ImageTk.PhotoImage(PlayImg)
+ActivePlay = ImageTk.PhotoImage(AlayImg)
+PlayButton = Tkinter.Label(Newwnd,image=Play)
+PlayButton.grid(padx=500,pady=300)
+Newwnd.mainloop()
+
+
+
 
 
 
