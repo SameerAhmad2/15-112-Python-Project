@@ -18,18 +18,40 @@
 #    12/11 2:34pm      12/11 5:12pm
 #    13/11 5:18pm      13/11 7:07pm
 #    13/11 9:56pm      14/11 12:15am
+#    14/11 1:23pm      14/11 2:53pm
+#    19/11 5:37pm      19/11 7:03pm
+#    20/11 2:52pm      20/11 3:44pm
+#    20/11 6:18pm      20/11 9:35pm
+#    21/11 6:21am      21/11 9:45am
+#    21/11 11:21am
 
  
 import pygame
 import math
 import random
-##import numpy
-##import cv2
-from PIL import Image
+import Tkinter
+from PIL import ImageTk,Image
 import ImageWriter
+import Login
+import tkMessageBox
+
 
 #**|** The relevant code was borrowed from http://stackoverflow.com/questions/9041681/opencv-python-rotate-image-by-x-degrees-around-specific-point
 #Function to return the Modulus of X
+
+def PlayScreen(Entry):
+    global wnd          
+    global UsernameStr
+    global PasswordStr
+    global socket
+    ItWorked = Login.login(socket,str(UsernameStr.get()),str(PasswordStr.get()))
+    if ItWorked:
+        initMenu()
+    else:
+        tkMessageBox.showinfo(title="Telepathic Trafficking",message="The dead have stopped you from entering their dimension... Try Again")
+##        Entry[0].delete('1.0',"end")
+##        Entry[1].delete('1.0',"end")
+
 def Modulus(x):
     if x<0:
         x = -x
@@ -66,7 +88,7 @@ def SummonZombie(Type,x,y):
     global angle
     if Type == "Brain":
         Zombie = BrainZombie(x,y,angle)
-    else:
+    elif Type == "Cap":
         Zombie = CapZombie(x,y,angle)
         
     #Stores this instance in a list of active zombies.
@@ -97,42 +119,43 @@ def AimAssistON():
 
 
 #Class for the Brain Zombie Sprite
-class BrainZombie():
+class BrainZombie(pygame.sprite.Sprite):
     global Screen
     def __init__(self,x,y,angle):
+        pygame.sprite.Sprite.__init__(self)
         self.frame = 1
-        self.x_pos = x
-        self.y_pos = y
-        self.angle = angle
         self.allFrames = []
         for i in range(8):
             ZombieFrame = pygame.image.load("BrainZombie"+str(self.frame+i)+".png")
             self.allFrames.append(ZombieFrame)
+        self.rect = self.allFrames[0].get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.angle = angle
         self.me = None
         
     def move(self,mX,mY):
         global FrameCount1
-        x_Dist = mX - self.x_pos
-        y_Dist = mY - self.y_pos
+        x_Dist = mX - self.rect.x
+        y_Dist = mY - self.rect.y
         x_change = x_Dist/float(300)
         y_change = y_Dist/float(300)
-        self.x_pos += x_change
-        self.y_pos += y_change
+        self.rect.x += x_change
+        self.rect.y += y_change
         if FrameCount1%5 == 0:
             self.frame = self.frame%8 + 1
         FrameCount1 += 1
         
-    def rotate(self,mX,mY):
-        Img = self.allFrames[self.frame - 1]
-        NewImg = Rotate(Img,self.x_pos,self.y_pos)
-        self.allFrames[self.frame - 1] = NewImg
+##    def rotate(self,mX,mY):
+##        Img = self.allFrames[self.frame - 1]
+##        NewImg = Rotate(Img,self.x_pos,self.y_pos)
+##        self.allFrames[self.frame - 1] = NewImg
         
     def update(self):
         global Screen
-        if self.me != None:
-            self.me = "Alive"
-        Screen.blit(self.allFrames[self.frame-1],(self.x_pos,self.y_pos))
+        Screen.blit(self.allFrames[self.frame-1],self.rect)
 
+            
 #Class for the Cap Zombie Sprite
 class CapZombie():
     global Screen
@@ -171,9 +194,10 @@ class CapZombie():
         Screen.blit(self.allFrames[self.frame-1],(self.x_pos,self.y_pos))
 
 #Class for the Blinking Zombie Sprite
-class BlinkingZombie():
+class BlinkingZombie(pygame.sprite.Sprite):
     global Screen
     def __init__(self,x,y,angle):
+        pygame.sprite.Sprite.__init__(self)
         self.frame = 1
         self.x_pos = x
         self.y_pos = y
@@ -208,17 +232,19 @@ class BlinkingZombie():
         Screen.blit(self.allFrames[self.frame-1],(self.x_pos,self.y_pos))
 
 #Class for the Player Sprite (That means YOU)       
-class Player():
+class Player(pygame.sprite.Sprite):
     def __init__(self,x,y):
+        pygame.sprite.Sprite.__init__(self)
         self.frame = 1
-        self.x_pos = x
-        self.y_pos = y
-        self.me = None
         self.allFrames = []
         for i in range(3):
             PlayerFrame = pygame.image.load("Player"+str(self.frame+i)+".png")
             self.allFrames.append(PlayerFrame)
-            
+        self.rect = self.allFrames[0].get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.me = None        
+        
     def ChangeFrame(self):
         global FrameCount4
         if FrameCount4%20 == 0:
@@ -227,43 +253,43 @@ class Player():
 
     def Move(self,Letter):
         (mX,mY) = pygame.mouse.get_pos()
-        ModDist = math.sqrt((self.x_pos-mX)**2 + (self.y_pos-mY)**2)
+        ModDist = math.sqrt((self.rect.x-mX)**2 + (self.rect.x-mY)**2)
         Vect1 = (1,0)
-        Vect2 = (mX-self.x_pos,mY-self.y_pos)
-        Angle = math.acos((Vect1[0]*Vect2[0] + Vect1[1]*Vect2[1])/(math.sqrt((mX-self.x_pos)**2 + (mY-self.y_pos)**2)))
+        Vect2 = (mX-self.rect.x,mY-self.rect.y)
+        Angle = math.acos((Vect1[0]*Vect2[0] + Vect1[1]*Vect2[1])/(math.sqrt((mX-self.rect.x)**2 + (mY-self.rect.y)**2)))
         DegAngle = math.degrees(Angle)
-        if mY<self.y_pos:
+        if mY<self.rect.y:
             angle = DegAngle
         else:
             angle = -DegAngle
         
         Ratio =ModDist*math.sin(angle)/ModDist*math.cos(angle)
-        if self.x_pos<0:
-            self.x_pos = 0
-        if self.x_pos > width-64:
-            self.x_pos = width-64
-        if self.y_pos<0:
-            self.y_pos = 0
-        if self.y_pos>height-64:
-            self.y_pos = height-64
+        if self.rect.x<0:
+            self.rect.x = 0
+        if self.rect.x > width-64:
+            self.rect.x = width-64
+        if self.rect.y<0:
+            self.rect.y = 0
+        if self.rect.y>height-64:
+            self.rect.y = height-64
         else:
             if Letter == "W":
-                self.y_pos -= 2
+                self.rect.y -= 2
             if Letter == "S":
-                self.y_pos += 2
+                self.rect.y += 2
             if Letter == "A":
-                self.x_pos -= 2
+                self.rect.x -= 2
             if Letter == "D":
-                self.x_pos += 2
+                self.rect.x += 2
             
     def update(self):
         global Screen
         if self.me != None:
             self.me = "Alive"
-        Screen.blit(self.allFrames[self.frame-1],(self.x_pos,self.y_pos))
+        Screen.blit(self.allFrames[self.frame-1],self.rect)
 
     def getPlayerPos(self):
-        return self.x_pos,self.y_pos
+        return self.rect.x,self.rect.y
 
 #Class to fire a Bullet
 class Bullet():
@@ -308,16 +334,35 @@ class Bullet():
     def update(self):
         global Screen
         Screen.blit(self.img,(self.x_pos,self.y_pos))
-        
+
+###Initializes a socket connection.
+##socket = Login.StartConnection("86.36.33.206", 15112)
+##
+###Initializes a Tkinter Login Window
+##wnd = Tkinter.Tk()
+##wnd.geometry("250x250")
+##wnd.title("Enter The Undead Realm")
+##UsernameStr = Tkinter.StringVar()      #Gets the value in entrybox and stores it in UsernameStr.
+##PasswordStr = Tkinter.StringVar()      #Gets the value in the entrybox 2 and stores it in PasswordStr.
+##Username = Tkinter.Label(wnd,text="Username")           #Label - Username
+##FillSpace1 = Tkinter.Entry(wnd,textvariable=UsernameStr)      #Entry Box
+##Password = Tkinter.Label(wnd,text="Password")           #Label - Password
+##FillSpace2 = Tkinter.Entry(wnd,show="*",textvariable=PasswordStr)    #Entry Box
+##Username.pack()                    # |
+##FillSpace1.pack()                  # |
+##Password.pack()                    # | =   Shows them on the window
+##FillSpace2.pack()                  # |
+##Okay = Tkinter.Button(text="Enter the Realm!",command=lambda x= [FillSpace1,FillSpace2]: PlayScreen(x))   #Button - OK
+##Okay.pack()    
+##wnd.mainloop()
+
 #Initialize pygame and set up display
 pygame.init()
 width,height = 900,500
 Screen = pygame.display.set_mode((width,height))
 
-
 #Initializing all the necessary variables
 white = 255,255,255
-angle = -90
 AllZombies = []
 AllBullets = []
 FrameCount1 = 0
@@ -333,6 +378,8 @@ RandomNo1 = random.randint(4,15)
 Percentage = 100
 Player1 = Player(width/2-32,height/2-32)
 AimAssistCount = 0
+angle = -90
+clock = pygame.time.Clock()
 
 
 #Creating Boundary Coordinates and Storing them in a list.
@@ -345,18 +392,19 @@ for i in range(height/2):
     ListofBoundaryCoords += [(0,i)]
 for i in range(height/2,height):
     ListofBoundaryCoords += [(width,i)]
-clock = pygame.time.Clock()
 
-
-##for i in range(RandomNo1):
-##    RandomNo2 = random.randint(1,(width+height))
-##    (x,y) = ListofBoundaryCoords[RandomNo2 - 1]
-##    SummonZombie("Brain",x,y)
+    
+for i in range(RandomNo1):
+    RandomNo2 = random.randint(1,(width+height))
+    (x,y) = ListofBoundaryCoords[RandomNo2 - 1]
+    SummonZombie("Brain",x,y)
 
 
 #Main game while loop.
 while not gameExit:
-
+    ListofXCoords = []
+    ListofYCoords = []
+    
     #Event LOOP
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -367,14 +415,13 @@ while not gameExit:
             ZombieKiller.Change(P1x,P1y)
             AllBullets.append(ZombieKiller)
 
-            
+                
     #Zombie LOOP
     Screen.fill(white)
     for Zomb in AllZombies:
         P1x,P1y = Player1.getPlayerPos()
         Zomb.move(P1x,P1y)                
         Zomb.update()
-
 
     #Random New Zombie Spawner Condition
     if NewZombieCount%1250 == 0 and NewZombieCount != 0:
@@ -409,11 +456,11 @@ while not gameExit:
     for Bullets in AllBullets:
         Bullets.Move()
         Bullets.update()
-        
+            
     #Player1 Update Haandler    
     Player1.ChangeFrame()
     Player1.update()
-    
+     
     #Health Bar Handler
     Screen.blit(HealthBar(Percentage),(width-210,height-140))
 
@@ -422,12 +469,23 @@ while not gameExit:
 pygame.quit()
 quit()
 
-
-
-
-
-
-
+##Newwnd = Tkinter.Tk()
+##Newwnd.title("Realm Updater")
+##Newwnd.geometry("1000x700")
+##background = Image.open("ZombieBackground.jpg")
+##background_image = ImageTk.PhotoImage(background)
+##Background_label = Tkinter.Label(Newwnd,image=background_image)
+##Background_label.place(x=0,y=0,relwidth=1,relheight=1)
+##Canvas = Tkinter.Canvas(Newwnd,width=20,height=7)
+##Canvas.grid(row=5,column=1)    
+##PlayImg = Image.open("PassivePlay.png")
+##ActivePlayImg = Image.open("ActivePlay.png")
+##Play = ImageTk.PhotoImage(PlayImg)
+##ActivePlay = ImageTk.PhotoImage(ActivePlayImg)
+##PlayButton = Tkinter.Label(Newwnd,image=Play)
+##PlayButton.grid(padx=500,pady=300)
+##Newwnd.mainloop()
+##
 
 
 
