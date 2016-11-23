@@ -26,7 +26,8 @@
 #    21/11 11:21am     21/11 12:17pm
 #    21/11 6:30pm      21/11 11:13pm
 #    22/11 6:17pm      22/11 8:12pm
-#    22/11 9:56pm
+#    22/11 9:56pm      23/11 1:27am
+#    23/11 8:48am      23/11 11:54am
 
 import pygame
 import math
@@ -92,6 +93,58 @@ def IntroScreen():
         pygame.display.update()
         clock.tick(15)
 
+def Pause_Screen():
+    print "Pause MAAAAANNNN"
+
+def Dead_Screen():
+    global RoundNo
+    global Score
+    Dead = True
+    BackgroundChanger = 1
+    CounttoDisplayChoices = 0
+    CounttoDisplayRounds = 0
+    NewGame = pygame.image.load("SelectNewGame.png")
+    Leave = pygame.image.load("SelectExit.png")
+    font = pygame.font.Font("Prison Tattoo.ttf",24)
+    text = font.render("Survived "+str(RoundNo)+" Round(s)",1,(205,0,0))
+    while Dead:
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+        BG = pygame.image.load("Dead"+str(BackgroundChanger)+".png")
+        Screen.blit(BG,(0,0))
+        if BackgroundChanger < 30:
+            BackgroundChanger += 1
+        if CounttoDisplayChoices == 50:
+            if BackgroundChanger != 38:
+                BackgroundChanger += 1
+                print BackgroundChanger
+        else:
+            CounttoDisplayChoices += 1
+
+        (mX,mY) = pygame.mouse.get_pos()
+        clicked = pygame.mouse.get_pressed()[0]
+        if 225 <= mX <= 400 and 525 <= mY <= 580:
+            Screen.blit(NewGame,(0,0))
+            if clicked:
+                Game_loop()
+        if 570 <= mX <= 750 and 520 <= mY <= 585:
+            Screen.blit(Leave,(0,0))
+            if clicked:
+                pygame.quit()
+                quit()
+        
+        if CounttoDisplayRounds >70:
+            Screen.blit(text,(370,610))        
+        
+        CounttoDisplayRounds += 1         
+        pygame.display.update()
+
+
+        
 def Modulus(x):
     if x<0:
         x = -x
@@ -181,9 +234,9 @@ def ZombiesRemaining(DeadZomble,TotalZomble):
 #Function to determin the Round No:
 def RoundNumber(Round):
     global Screen
-    font = pygame.font.SysFont("comicsanms,",25,bold=True)
-    text = font.render("Round: "+str(Round),1,(232,25,78))
-    Screen.blit(text,(0,50))
+    font = pygame.font.SysFont("Prison Tattoo.ttf",50,bold=True)
+    text = font.render(str(Round),1,(232,25,78))
+    Screen.blit(text,(950,0))
     
     
 #Class for the Brain Zombie Sprite
@@ -351,7 +404,7 @@ class Player(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.frame = 1
         self.allFrames = []
-        for i in range(3):
+        for i in range(4):
             PlayerFrame = pygame.image.load("Player"+str(self.frame+i)+".png")
             self.allFrames.append(PlayerFrame)
         self.rect = self.allFrames[0].get_rect()
@@ -364,7 +417,7 @@ class Player(pygame.sprite.Sprite):
     def ChangeFrame(self):
         global FrameCount4
         if FrameCount4%20 == 0:
-            self.frame = self.frame%3 + 1
+            self.frame = self.frame%4 + 1
         FrameCount4 += 1
 
     def Move(self,Letter):
@@ -397,18 +450,11 @@ class Player(pygame.sprite.Sprite):
                 self.x -= 2
             if Letter == "D":
                 self.x += 2
-
-    def CheckLives(self,Sprite1,Sprite2):
-        collision = pygame.sprite.collide_rect(Sprite1,Sprite2)
-        if collision:
-            self.lives -= 1
-            self.Hit = 1
         
     def update(self):
         global Screen
         if self.me != None:
             self.me = "Alive"
-            self.Hit = 0
         Screen.blit(self.allFrames[self.frame-1],(self.x,self.y))
         
 
@@ -428,6 +474,8 @@ class Bullet(pygame.sprite.Sprite):
         self.mY = MouseY
         self.x_change = 0
         self.y_change = 0
+        self.me = "Time to Kill a Zombie"
+        
     def Change(self):
         dx = self.rect.x - self.mX
         dy = self.rect.y - self.mY
@@ -457,36 +505,14 @@ class Bullet(pygame.sprite.Sprite):
     def Attack(self):
         self.rect.x -= self.x_change
         self.rect.y += self.y_change
-        
-##        (mX,mY) = pygame.mouse.get_pos()
-##        ModDist = math.sqrt((x1-mX)**2 + (y1-mY)**2)
-##        Vect1 = (1,0)
-##        Vect2 = (mX-x1,mY-y1)
-##        Angle = math.acos((Vect1[0]*Vect2[0] + Vect1[1]*Vect2[1])/(math.sqrt((mX-x1)**2 + (mY-y1)**2)))
-##        DegAngle = math.degrees(Angle)
-##        if mY<self.y_pos:
-##            angle = DegAngle
-##        else:
-##            angle = -DegAngle
-##        Ratio = (mY-y1)/float(mX-x1)
-##        if mX>x1:
-##            self.x_change = self.speed*1
-##        else:
-##            self.x_change = self.speed*(-1)
-##        if Modulus(angle)>75 and Modulus(angle)<105:
-##            if Ratio>self.speed:
-##                Ratio = self.speed
-##            if Ratio<-self.speed:
-##                Ratio = -self.speed
-##            if Ratio>0 and Ratio<self.speed/2:
-##                Ratio = self.speed/2
-##            if Ratio<=0 and Ratio>-self.speed/2:
-##                Ratio = -self.speed/2
-##        self.y_change = self.x_change*Ratio
-        
+
+    def Kill(self):
+        self.me = "I have severed a zombie head off its neck"
+    
     def update(self):
         global Screen
-        Screen.blit(self.image,(self.rect.x,self.rect.y))
+        if self.me != "I have severed a zombie head off its neck":
+            Screen.blit(self.image,(self.rect.x,self.rect.y))
 
 #Initialize pygame and set up display
 pygame.init()
@@ -565,6 +591,7 @@ def Game_loop():
                 P1x,P1y = Player1.getPlayerPos()
                 (mX,mY) = pygame.mouse.get_pos()
                 ZombieKiller = Bullet(10,P1x,P1y,mX,mY)
+                ZombieKiller.Change()
                 AllBullets.append(ZombieKiller)
 
         
@@ -577,14 +604,7 @@ def Game_loop():
             for Bullets in AllBullets:
                 Zomb.CheckCollide(Zomb,Bullets)
                 if Zomb.me == "Kill":
-                    Score += 10
-                    DeadZombies += 1
-                    del AllBullets[AllBullets.index(Bullets)]
-
-            Player1.CheckLives(Player1,Zomb)
-            if Player1.Hit == 1:
-                Zomb.Kill()
-                Percentage -= 10
+                    Bullets.Kill()
             Zomb.update()
 
         MoveTime += 1
@@ -625,11 +645,36 @@ def Game_loop():
         
         for Bullets in AllBullets:
             Bullets.Attack()
+            if Bullets.rect.x>1000 or Bullets.rect.x<0-29 or Bullets.rect.y>650 or Bullets.rect.y<0-29:
+                Bullets.Kill()
             Bullets.update()
                 
         #Player1 Update Haandler
         Player1.ChangeFrame()
+        for Zomb in AllZombies:
+            Collide = False
+            Px,Py = Player1.x + 13,Player1.y + 7
+            zX,zY = Zomb.rect.x + 5,Zomb.rect.y + 3
+            Azx,Azy = 54,58
+            Apx,Apy = 38,50
+            if zX < Px + Apx and zY + Azy > Py and zX + Azx > Px + Apx and zY > Py:
+                Collide = True
+            if zX + AzX > Px and zY + AzY > Py and zX < Px and zY < Py:
+                Collide = True
+            if zX + AzX > Px and zY < Py + Apy and zX < Px and zY + Azy > Py + Apy:
+                Collide = True
+            if zX < Px + Apx and zY < Py + Apy and zX + Azx > Px + Apx and zY + Azy > Py + Apy:
+                Collide = True
+            
+            if Result == True:
+                Zomb.kill()
+                Percentage -= 10
+                Score += 10
+                DeadZombies -= 1
+        if Percentage == 0:
+            Dead_Screen()
         Player1.update()
+        
          
         #Health Bar Handler
         Screen.blit(HealthBar(Percentage),(width-210,height-140))
@@ -648,6 +693,10 @@ def Game_loop():
         #Round Number Handler
         RoundNumber(RoundNo)
 
+        if DeadZombies == TotalZombies:
+            RoundNo += 1
+            DeadZombies = 0
+            TotalZombies += 5
         
         pygame.display.update()
         clock.tick(60)
