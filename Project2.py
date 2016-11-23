@@ -28,6 +28,9 @@
 #    22/11 6:17pm      22/11 8:12pm
 #    22/11 9:56pm      23/11 1:27am
 #    23/11 8:48am      23/11 11:54am
+#    23/11 7:12pm      23/11 11:43pm
+
+#(@@@) This code was taken from http://pygame.org/wiki/RotateCenter?parent=
 
 import pygame
 import math
@@ -56,7 +59,7 @@ import tkMessageBox
 ####        Entry[1].delete('1.0',"end")
 
 #Start Screen
-def IntroScreen():
+def Intro_Screen():
     
     intro = True
     Background = pygame.image.load("ZombieBG.jpg")
@@ -82,7 +85,7 @@ def IntroScreen():
         if 120 <= x <= 230 and 455 <= y <= 495:
             Screen.blit(ActivePlay,(100,450))
             if clicked:
-                Game_loop()
+                intro = False
         if 405 <= x <= 593 and 455 <= y <= 499:
             Screen.blit(ActiveOptions,(400,450))
         if 765 <= x <= 885 and 455 <= y <= 497:
@@ -90,14 +93,52 @@ def IntroScreen():
             if clicked:
                 pygame.quit()
                 quit()
+                
         pygame.display.update()
         clock.tick(15)
 
 def Pause_Screen():
-    print "Pause MAAAAANNNN"
+    PauseScreen = pygame.image.load("StartPause.png")
+    Resume = pygame.image.load("ToResume.png")
+    Restart = pygame.image.load("RestartButton.png")
+    Exit = pygame.image.load("ExitButton.png")
+    PlayerFrames = []
+    frame = 1
+    for i in range(4):
+        PlayerFrames.append(pygame.image.load("Player"+str(frame+i)+"Big.png"))
+        
+    CountForMovingSoldier = 0
+    isPaused = True
+    while isPaused:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+        Screen.blit(PauseScreen,(0,0))
+        (x,y) = pygame.mouse.get_pos()
+        clicked = pygame.mouse.get_pressed()[0]
+        if 104 <= x <= 277 and 246 <= y <= 273:
+            Screen.blit(Resume,(0,0))
+            if CountForMovingSoldier%5 == 0:
+                frame = frame%4 + 1
+            Screen.blit(PlayerFrames[frame-1],(640,420))
+            if clicked:
+                isPaused = False
+        if 107 <= x <= 285 and 323 <= y <= 349:
+            Screen.blit(Restart,(0,0))
+            if clicked:
+                isPaused = False
+                Game_loop()
+        if 109 <= x <= 209 and 399 <= y <= 424:
+            Screen.blit(Exit,(0,0))
+            if clicked:
+                pygame.quit()
+                quit()
 
-def Dead_Screen():
-    global RoundNo
+        pygame.display.update()
+    
+    
+def Dead_Screen(RoundNo):
     global Score
     Dead = True
     BackgroundChanger = 1
@@ -108,7 +149,6 @@ def Dead_Screen():
     font = pygame.font.Font("Prison Tattoo.ttf",24)
     text = font.render("Survived "+str(RoundNo)+" Round(s)",1,(205,0,0))
     while Dead:
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -121,7 +161,6 @@ def Dead_Screen():
         if CounttoDisplayChoices == 50:
             if BackgroundChanger != 38:
                 BackgroundChanger += 1
-                print BackgroundChanger
         else:
             CounttoDisplayChoices += 1
 
@@ -130,6 +169,7 @@ def Dead_Screen():
         if 225 <= mX <= 400 and 525 <= mY <= 580:
             Screen.blit(NewGame,(0,0))
             if clicked:
+                Dead = False
                 Game_loop()
         if 570 <= mX <= 750 and 520 <= mY <= 585:
             Screen.blit(Leave,(0,0))
@@ -143,12 +183,15 @@ def Dead_Screen():
         CounttoDisplayRounds += 1         
         pygame.display.update()
 
-
-        
-def Modulus(x):
-    if x<0:
-        x = -x
-    return x
+#Function to Rotate Image from its center. (@@@)
+def Rot_center(image, angle):
+    """rotate an image while keeping its center and size"""
+    orig_rect = image.get_rect()
+    rot_image = pygame.transform.rotate(image, angle)
+    rot_rect = orig_rect.copy()
+    rot_rect.center = rot_image.get_rect().center
+    rot_image = rot_image.subsurface(rot_rect).copy()
+    return rot_image
 
 #Function to laod relevant HealthBar depending on Percentage of Health
 def HealthBar(Percentage):
@@ -186,24 +229,6 @@ def SummonZombie(Type,x,y,speed):
         
     #Stores this instance in a list of active zombies.
     AllZombies.append(Zombie)
-
-#Function to rotate Zombie Image (Currently not Working =P)
-def Rotate(Img,x,y):
-    (mX,mY) = pygame.mouse.get_pos()
-    Vect1 = (1,0)
-    Vect2 = (mX-x,mY-y)
-    Angle = math.acos((Vect1[0]*Vect2[0] + Vect1[1]*Vect2[1])/(math.sqrt((mX-x)**2 + (mY-y)**2)))
-    DegAngle = math.degrees(Angle)
-    if mY>y:
-        angle = - DegAngle - 90
-    else:
-        angle = DegAngle - 90
-##    RotImg = pygame.transform.rotate(Img,angle)
-    # **|**
-##    image_center = (numpy.array(Img.shape)/2)
-##    Rotation_Matrix = cv2.getRotationMatrix2D(image_center,angle,1.0)
-##    RotImg = cv2.wrapAffine(Img,Rotation_Matrix,Img.shape,flags = cv2.INTER_LINEAR)
-##    return RotImg
 
 #Function to Toggle AimAssist
 def AimAssistON():
@@ -282,6 +307,7 @@ class BrainZombie(pygame.sprite.Sprite):
                 self.angle = -(math.atan2(float(dx),dy)) + math.pi 
         self.rect.x -= math.sin(self.angle)*self.speed
         self.rect.y += math.cos(self.angle)*self.speed
+        
         if FrameCount2%7 == 0:
             self.frame = self.frame%8 + 1
         FrameCount2 += 1
@@ -290,19 +316,15 @@ class BrainZombie(pygame.sprite.Sprite):
         collision = pygame.sprite.collide_rect(Sprite1,Sprite2)
         if collision:
             self.me = "Kill"
-
-    def Kill(self):
-        self.me = "Kill"
             
     def update(self):
         global Screen
-        if self.me != "Kill":
-            Screen.blit(self.allFrames[self.frame-1],self.rect)
+        Screen.blit(self.allFrames[self.frame-1],self.rect)
 
 #Class for the Cap Zombie Sprite
 class CapZombie(pygame.sprite.Sprite):
     global Screen
-    def __init__(self,x,y,speed=1):
+    def __init__(self,x,y,speed):
         pygame.sprite.Sprite.__init__(self)
         self.frame = 1
         self.allFrames = []
@@ -351,13 +373,9 @@ class CapZombie(pygame.sprite.Sprite):
         if collision:
             self.me = "Kill"
 
-    def Kill(self):
-        self.me = "Kill"
-        
     def update(self):
         global Screen
-        if self.me != "Kill":
-            Screen.blit(self.allFrames[self.frame-1],(self.rect.x,self.rect.y))
+        Screen.blit(self.allFrames[self.frame-1],(self.rect.x,self.rect.y))
 
 #Class for the Blinking Zombie Sprite
 ##class BlinkingZombie(pygame.sprite.Sprite):
@@ -421,18 +439,6 @@ class Player(pygame.sprite.Sprite):
         FrameCount4 += 1
 
     def Move(self,Letter):
-        (mX,mY) = pygame.mouse.get_pos()
-        ModDist = math.sqrt((self.x-mX)**2 + (self.x-mY)**2)
-        Vect1 = (1,0)
-        Vect2 = (mX-self.x,mY-self.y)
-        Angle = math.acos((Vect1[0]*Vect2[0] + Vect1[1]*Vect2[1])/(math.sqrt((mX-self.x)**2 + (mY-self.y)**2)))
-        DegAngle = math.degrees(Angle)
-        if mY<self.rect.y:
-            angle = DegAngle
-        else:
-            angle = -DegAngle
-        
-        Ratio =ModDist*math.sin(angle)/ModDist*math.cos(angle)
         if self.x<0:
             self.x = 0
         if self.x > width-64:
@@ -450,6 +456,33 @@ class Player(pygame.sprite.Sprite):
                 self.x -= 2
             if Letter == "D":
                 self.x += 2
+
+    def Rotate(self,mX,mY):
+        dx = self.rect.x - mX
+        dy = self.rect.y - mY
+        if self.rect.x>=mX and self.rect.y<mY:
+            if self.rect.x == mX:
+                self.angle = 0
+            else:
+                self.angle = math.atan2(float(dy),dx) + math.pi/2
+        elif self.rect.x<mX and self.rect.y<=mY:
+            if self.rect.y == mY:
+                self.angle = -math.pi/2
+            else:
+                self.angle = math.atan2(float(dy),dx) + math.pi/2
+        elif self.rect.x<=mX and self.rect.y>mY:
+            if self.rect.x == mX:
+                self.angle = math.pi
+            else:
+                self.angle = -(-math.atan2(float(dy),dx) + 3*(math.pi)/2)
+        elif self.rect.x>mX and self.rect.y>=mY:
+            if self.rect.y == mY:
+                self.angle = math.pi/2
+            else:
+                self.angle = -(math.atan2(float(dx),dy)) + math.pi
+        for i in range(4):
+            Blit_image = Rot_center(self.allFrames[i],self.angle)
+            self.allFrames[i] = Blit_image            
         
     def update(self):
         global Screen
@@ -502,17 +535,18 @@ class Bullet(pygame.sprite.Sprite):
         self.x_change = math.sin(self.angle)*self.speed
         self.y_change = math.cos(self.angle)*self.speed
 
+    def CheckCollide(self,Sprite1,Sprite2):
+        collision = pygame.sprite.collide_rect(Sprite1,Sprite2)
+        if collision:
+            self.me = "Kill"
+
     def Attack(self):
         self.rect.x -= self.x_change
         self.rect.y += self.y_change
-
-    def Kill(self):
-        self.me = "I have severed a zombie head off its neck"
     
     def update(self):
         global Screen
-        if self.me != "I have severed a zombie head off its neck":
-            Screen.blit(self.image,(self.rect.x,self.rect.y))
+        Screen.blit(self.image,(self.rect.x,self.rect.y))
 
 #Initialize pygame and set up display
 pygame.init()
@@ -529,21 +563,14 @@ FrameCount2 = 0
 FrameCount3 = 0
 FrameCount4 = 0
 gameExit = False
-NewZombieCount = -40
 x_change = 0
 y_change = 0
 mX , mY = 0 , 0
 RandomNo1 = random.randint(4,15)
-Percentage = 100
 Player1 = Player(width/2-32,height/2-32)
-AimAssistCount = 0
 angle = -90
 speed = 5
-Score = 0
 TotalZombies = 5
-DeadZombies = 0
-RoundNo = 1
-MoveTime = 0
 clock = pygame.time.Clock()
 
 #Initialize all the necessary images
@@ -560,23 +587,24 @@ for i in range(height):
 for i in range(height,height):
     ListofBoundaryCoords += [(width,i)]
 
-    
-##for i in range(1):
-##    RandomNo2 = random.randint(1,(width+height))
-##    (x,y) = ListofBoundaryCoords[RandomNo2 - 1]
-##    SummonZombie("Brain",x,y,speed)
-
+ListofNumbers = []
+for i in range(100):
+    ListofNumbers += [i+1]
+ 
 def Game_loop():
-    
-    global AimAssistCount
+    global speed
     global MoveTime
-    global Score
-    global DeadZombies
-    global TotalZombies
-    global RoundNo
-    global NewZombieCount
-    global Percentage
-
+    AimAssistCount = 0
+    Score = 0
+    DeadZombies = 0
+    TotalZombies = 5
+    RoundNo = 1
+    MoveTime = 0
+    ChallengeControl = 100
+    Percentage = 100
+    DecidingAmmount = 25
+    NewZombieCount = -40
+    
     gameExit = False
     #Main game while loop.
     while not gameExit:
@@ -594,34 +622,46 @@ def Game_loop():
                 ZombieKiller.Change()
                 AllBullets.append(ZombieKiller)
 
-        
-        #Zombie LOOP
         Screen.fill(white)
-        for Zomb in AllZombies:
-            P1x,P1y = Player1.getPlayerPos()
-            if MoveTime%3 == 0:
-                Zomb.move(P1x,P1y)
-            for Bullets in AllBullets:
-                Zomb.CheckCollide(Zomb,Bullets)
-                if Zomb.me == "Kill":
-                    Bullets.Kill()
-            Zomb.update()
-
-        MoveTime += 1
 
         #Random New Zombie Spawner Condition
-
-
-        if NewZombieCount%100 == 0 and NewZombieCount != 0:
+        if NewZombieCount%ChallengeControl == 0 and NewZombieCount != 0:
             RandomNo2 = random.randint(1,len(ListofBoundaryCoords))
             (x,y) = ListofBoundaryCoords[RandomNo2 - 1]
-            Decider = random.choice([1,2,3,4,5,6,7,8,9,10])
-            if Decider < 4:
+            Decider = random.choice(ListofNumbers)
+            if Decider < DecidingAmmount:
                 SummonZombie("Cap",x,y,speed)
             else: 
                 SummonZombie("Brain",x,y,speed)
         NewZombieCount += 1
+        
 
+        #Bullets LOOP
+        for Bullets in AllBullets:
+            Bullets.Attack()
+            for Zomb in AllZombies:
+                Bullets.CheckCollide(Bullets,Zomb)
+                if Bullets.me == "Kill":
+                    if Bullets in AllBullets:
+                        AllBullets.remove(Bullets)
+                    if Zomb in AllZombies:
+                        AllZombies.remove(Zomb)
+                    Score += 10
+                    DeadZombies += 1
+                
+            if Bullets.rect.x>1000 or Bullets.rect.x<0-29 or Bullets.rect.y>650 or Bullets.rect.y<0-29:
+                AllBullets.remove(Bullets)
+            Bullets.update()
+    
+        
+        #Zombie LOOP
+        for Zomb in AllZombies:
+            P1x,P1y = Player1.getPlayerPos()
+            if MoveTime%3 == 0:
+                Zomb.move(P1x,P1y)                    
+            Zomb.update()
+
+        MoveTime += 1
 
       #Handling Pressed Keys    
         KeysPressed = pygame.key.get_pressed()
@@ -641,13 +681,7 @@ def Game_loop():
         if KeysPressed[pygame.K_d]:
             Player1.Move("D")
         if KeysPressed[pygame.K_ESCAPE]:
-            PauseScreen()
-        
-        for Bullets in AllBullets:
-            Bullets.Attack()
-            if Bullets.rect.x>1000 or Bullets.rect.x<0-29 or Bullets.rect.y>650 or Bullets.rect.y<0-29:
-                Bullets.Kill()
-            Bullets.update()
+            Pause_Screen()
                 
         #Player1 Update Haandler
         Player1.ChangeFrame()
@@ -659,20 +693,20 @@ def Game_loop():
             Apx,Apy = 38,50
             if zX < Px + Apx and zY + Azy > Py and zX + Azx > Px + Apx and zY > Py:
                 Collide = True
-            if zX + AzX > Px and zY + AzY > Py and zX < Px and zY < Py:
+            if zX + Azx > Px and zY + Azy > Py and zX < Px and zY < Py:
                 Collide = True
-            if zX + AzX > Px and zY < Py + Apy and zX < Px and zY + Azy > Py + Apy:
+            if zX + Azx > Px and zY < Py + Apy and zX < Px and zY + Azy > Py + Apy:
                 Collide = True
             if zX < Px + Apx and zY < Py + Apy and zX + Azx > Px + Apx and zY + Azy > Py + Apy:
                 Collide = True
-            
-            if Result == True:
-                Zomb.kill()
+            if Collide == True:
+                if Zomb in AllZombies:
+                    AllZombies.remove(Zomb)
                 Percentage -= 10
-                Score += 10
-                DeadZombies -= 1
         if Percentage == 0:
-            Dead_Screen()
+            Dead_Screen(RoundNo)
+        (mX,mY) = pygame.mouse.get_pos()
+        Player1.Rotate(mX,mY)
         Player1.update()
         
          
@@ -697,11 +731,14 @@ def Game_loop():
             RoundNo += 1
             DeadZombies = 0
             TotalZombies += 5
-        
+            ChallengeControl -= 2
+            if DecidingAmmount <75:
+                DecidingAmmount += 5
         pygame.display.update()
         clock.tick(60)
-
-IntroScreen()
+        
+Intro_Screen()
+Game_loop()
 pygame.quit()
 quit()
 
